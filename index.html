@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iTunes Music Search</title>
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <h1>iTunes Music Search</h1>
+    <input type="text" id="searchInput" placeholder="Enter artist or song name">
+    <button onclick="searchMusic()">Search</button>
+
+    <div id="results"></div>
+
+    <script>
+        async function searchMusic() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return alert('Please enter an artist or song name');
+
+            const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=musicTrack&limit=20`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            // トラック価格があるものを優先して人気順に並び替え
+            const sortedResults = data.results
+                .filter(track => track.trackPrice !== null) // trackPriceがあるもののみを対象にする
+                .sort((a, b) => b.trackPrice - a.trackPrice); // trackPriceの高い順に並び替え
+
+            displayResults(sortedResults);
+        }
+
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';  // Clear previous results
+
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<p>No results found</p>';
+                return;
+            }
+
+            results.forEach(track => {
+                const trackDiv = document.createElement('div');
+                trackDiv.classList.add('track');
+
+                trackDiv.innerHTML = `
+                    <img src="${track.artworkUrl100}" alt="${track.trackName} Album Cover">
+                    <h3>${track.trackName}</h3>
+                    <p>${track.artistName}</p>
+                    <p><strong>Album:</strong> ${track.collectionName}</p>
+                    <p><strong>Price:</strong> $${track.trackPrice || 'N/A'}</p>
+                    <audio controls src="${track.previewUrl}">Your browser does not support the audio element.</audio>
+                `;
+
+                resultsDiv.appendChild(trackDiv);
+            });
+        }
+    </script>
+</body>
+</html>
